@@ -75,7 +75,7 @@ A MiniLang suporta os seguintes operadores aritméticos:
 | Operador | Significado |
 |---|---|
 | `&&` | E lógico |
-| `||` | OU lógico |
+| '\\' | OU lógico |
 
 ---
 
