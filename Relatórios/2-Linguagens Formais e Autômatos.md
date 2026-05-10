@@ -137,4 +137,3 @@ As principais estruturas utilizadas são:
 - Estruturas de repetição (`for`)
 - Blocos delimitados por `{ }`
 
-Esse modelo facilita a leitura, organização e manutenção do código.
