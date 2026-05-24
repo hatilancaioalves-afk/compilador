@@ -17,11 +17,13 @@ LETRA       [a-zA-Z_]
 
 "=="|"!="|">="|"<="|">"|"<" { printf("OPERADOR RELACIONAL: %s\n", yytext); }
 
-"&&"|"||" { printf("OPERADOR LOGICO: %s\n", yytext); }
+"&&"|"||"|"!" { printf("OPERADOR LOGICO: %s\n", yytext); }
 
-"+"|"-"|"*"|"/"|"=" { printf("OPERADOR ARITMETICO: %s\n", yytext); }
+"="  { printf("OPERADOR DE ATRIBUICAO: %s\n", yytext); }
 
-";"|"("|")"|"{"|"}" { printf("DELIMITADOR: %s\n", yytext); }
+"+"|"-"|"*"|"/" { printf("OPERADOR ARITMETICO: %s\n", yytext); }
+
+","|";"|"("|")"|"{"|"}" { printf("DELIMITADOR: %s\n", yytext); }
 
 [ \t\r\n]+ { /* Ignora espaços em branco */ }
 
