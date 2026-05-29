@@ -1,5 +1,5 @@
 **Visão Geral**
-- **Propósito do diretório**: contém as etapas finais do compilador (análise léxica, sintática, semântica, geração de AST e código intermediário TAC) implementadas em C usando Flex/Bison.
+- **Propósito do diretório**: contém as etapas finais do compilador (análise léxica, sintática, semântica, geração de AST, código intermediário TAC e simulação do ambiente de execução) implementadas em C usando Flex/Bison.
 
 **Arquivos e explicações (para leigos)**
 
@@ -26,7 +26,7 @@
 **Análise Semântica (semantic.h / semantic.c)**
 - **Arquivo**: [semantic.h](Codigo%20Intermediario/semantic.h) / [semantic.c](Codigo%20Intermediario/semantic.c)
 - **O que faz**: aplica regras de tipo e consistência depois que a árvore sintática foi construída (por exemplo, checa se variáveis foram declaradas, se tipos nas atribuições batem, se operações são válidas).
-- **Explicação simples**: verifica "faz sentido" o que o programa está pedindo — por exemplo, não deixa somar texto com número ou usar uma variável sem declará-la.
+- **Explicação simples**: verifica se "faz sentido" o que o programa está pedindo — por exemplo, não deixa somar texto com número ou usar uma variável sem declará-la.
 - **Funções principais e comportamentos**:
   - `semantic_init()`: inicia o estado (sem erros e sem tipo corrente).
   - `semantic_set_current_type(type_name)`: guarda o tipo atual quando se está processando uma declaração (por exemplo, depois de `int`).
@@ -34,7 +34,7 @@
   - `semantic_check_assignment(name, expr_type)`: verifica se a variável existe e se o tipo da expressão é compatível com o tipo da variável.
   - `semantic_check_print(name)`: verifica se a variável passada ao `print` existe.
   - `semantic_type_of_identifier(name)`: retorna o tipo da variável (ou marca erro se não declarada).
-  - `semantic_check_arithmetic/relational/logical(...)`: regras que determinam resultado de operações e detectam combinações inválidas (por exemplo, operação aritmética com `string` gera erro; se um lado for `float` o resultado é `float`, senão `int`).
+  - `semantic_check_arithmetic/relational/logical(...)`: regras que determinam resultado de operações e detectam combinações inválidas.
 - **Como o código funciona**: guarda um `current_type` temporário enquanto processa declarações; usa a `symbol_table` para checagens; quando encontra inconsistência, imprime mensagem e marca `semantic_error`.
 
 **Geração de Código Intermediário (tac.h / tac.c)**
@@ -45,17 +45,24 @@
   - `new_temp()` / `new_label()`: geram nomes temporários (`t1`, `t2`) e labels (`L1`) para rótulos de controle.
   - `emit(...)`: imprime uma instrução TAC formatada.
   - `gen_expr(node)`: gera código para expressões; quando encontra operadores cria um `temp` e imprime a linha com a operação.
-  - `gen_stmt(node)`: trata comandos (atribuição, print, if, listas de comandos).
+  - `gen_stmt(node)`: trata comandos (atribuição, print, if, funções, return, listas de comandos).
   - `tac_generate(root)`: inicializa contadores e dispara a geração a partir da raiz da AST.
-- **Exemplos de saída**: para `x = (a + b) * (c - d)` pode gerar linhas como `t1 = a + b`, `t2 = c - d`, `t3 = t1 * t2`, `x = t3`.
+
+**Ambiente de Execução (runtime.h / runtime.c)**
+- **Arquivo**: [runtime.h](Codigo%20Intermediario/runtime.h) / [runtime.c](Codigo%20Intermediario/runtime.c)
+- **O que faz**: Simula o gerenciamento de memória durante a execução do programa compilado, controlando o escopo de funções através de uma Pilha de Execução e Registros de Ativação (Activation Records).
+- **Explicação simples**: Funciona como a memória de curto prazo do programa. Quando uma função é chamada, o sistema empilha uma "caixa" (registro) para organizar as variáveis locais e saber para onde voltar. Quando a função termina, ele devolve o resultado e destrói essa caixa (desempilha).
+- **Funções e Estruturas principais**:
+  - `ActivationRecord` (struct): Guarda as informações do contexto atual (nome da função, valor de retorno e um ponteiro de link dinâmico para a função que a chamou).
+  - `pilha_push(nome_funcao, endereco)`: Aloca um novo registro no topo da pilha simulando o início de uma função e gera um log `[call]`.
+  - `pilha_pop()`: Remove o registro do topo da pilha simulando o comando de retorno, limpando a memória e gerando um log `[return]`.
+- **Exemplo de saída**: Ao chamar uma função e voltar ao bloco principal, gera logs lineares como `[call] soma`, `[return] soma = 5`, `[end] main()`.
 
 **Analisador Léxico (lexer.l / lex.yy.c)**
 - **Arquivo**: [lexer.l](Codigo%20Intermediario/lexer.l) e [lex.yy.c](Codigo%20Intermediario/lex.yy.c)
-- **O que faz**: lê o texto do programa e separa em "tokens" (palavras com significado, como `int`, `if`, nomes de variáveis, números, operadores).
+- **O que faz**: lê o texto do programa e separa em "tokens" (palavras com significado, como `int`, `return`, nomes de variáveis, números, operadores).
 - **Explicação simples**: como um filtro que lê texto e reconhece palavras-chave, números e símbolos para entregar ao parser.
 - **Pontos importantes**:
-  - regras para palavras-chave (`int`, `float`, `if`, `print`), literais de string (`'texto'`), identificadores (`LETRA (LETRA|DIGITO)*`), números (inteiro/float), operadores (`+ - * /`), relacionais e lógicos.
-  - atribui `yylval.str = strdup(yytext)` para passar o texto/token para o parser.
   - `lex.yy.c` é o arquivo gerado pelo Flex: contém muito código automático; o essencial é que cada regra retorna um código de token que o parser usa.
 
 **Analisador Sintático (parser.y / parser.tab.c / parser.tab.h)**
@@ -63,41 +70,22 @@
 - **O que faz**: define a gramática da linguagem (como os tokens se combinam para formar comandos válidos) e cria a AST aplicando ações quando regras são reconhecidas.
 - **Explicação simples**: o parser pega a lista de tokens do lexer e monta a árvore (AST) seguindo regras (por exemplo: uma atribuição é `IDENTIFICADOR = expressao ;`).
 - **Pontos importantes na `parser.y`**:
-  - regras para `programa`, `lista_comandos`, `declaracao`, `atribuicao`, `comando_if`, `comando_print`, `expressao`.
-  - ações semânticas: ao ver `int a, b;` o parser chama `semantic_set_current_type("int")` e `semantic_declare_identifier("a")`/`("b")`.
-  - ao reconhecer expressões o parser cria nós da AST (`criar_no`) com tipos determinados pelas funções semânticas.
-  - `main()` inicializa a análise semântica, executa `yyparse()`, imprime o AST e, se não houver erros semânticos, chama `tac_generate(raiz)`.
-- **Arquivos `.c` e `.h` com sufixo `tab`**: são produtos gerados pelo Bison; contêm a implementação automatizada do parser e as constantes de token. A versão humana para editar é `parser.y`.
+  - regras para funções, bloco principal, `return` e expressões avançadas.
+  - ações semânticas integradas durante a formação da árvore.
+  - `main()` inicializa a análise, gera o TAC e dispara a simulação da memória baseada no `runtime.c`.
 
 **Arquivo de teste (teste.txt)**
 - **Arquivo**: [teste.txt](Codigo%20Intermediario/teste.txt)
-- **Conteúdo**:
-```
-begin {
-    int a, b, x, d, c;
-    x = (a + b) * (c - d);
+- **Conteúdo atualizado**:
+```c
+int soma(int a, int b) {
+    int r;
+    r = a + b;
+    return r;
+}
+
+beginn {
+    int x;
+    x = soma(2, 3);
+    print x;
 } end
-```
-- **O que demonstra**: declaração de variáveis (`int a, b, x, d, c`) e uma atribuição com expressão composta, cobrindo análise léxica, sintática, semântica e geração de TAC.
-
-**Fluxo geral de execução (como tudo se conecta)**
-- `lex` (lexer) transforma texto em tokens.
-- `yacc/bison` (parser) consome tokens, aplica a gramática e constrói a AST com `criar_no(...)`.
-- Durante o parsing, a camada semântica (`semantic.c`) verifica tipos, registra variáveis na tabela (`symbol_table.c`) e marca erros.
-- Se não houver erro semântico, `tac_generate` converte a AST em TAC e imprime as instruções intermediárias.
-
-**Observações / Limitações**
-- A tabela de símbolos usa um array fixo de tamanho limitado (`MAX_SYMBOLS = 100`). Para programas maiores é preciso usar uma estrutura dinâmica (hash table).
-- Mensagens de erro semântico são impressas diretamente (não há mecanismo de recuperação avançado).
-- `lex.yy.c` e `parser.tab.c` são gerados automaticamente; edite `lexer.l` e `parser.y` e regenere com `flex`/`bison`.
-
-**Como testar rapidamente**
-- Na pasta `Codigo Intermediario`, execute:
-```bash
-flex lexer.l
-bison -d parser.y
-gcc -o compilador parser.tab.c lex.yy.c ast.c symbol_table.c semantic.c tac.c -lfl
-./compilador < teste.txt
-```
-
-Se quiser, eu posso gerar uma versão mais longa que mostre trechos de código comentados linha-a-linha para qualquer arquivo específico — diga qual arquivo você quer detalhado. 
