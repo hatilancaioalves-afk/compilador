@@ -74,6 +74,7 @@
 #include "ast.h"
 #include "semantic.h"
 #include "tac.h"
+#include "codegen_python.h"
 
 int yylex(void);
 int yyerror(const char *s);
@@ -1562,6 +1563,7 @@ int main(void) {
 
   if(yyparse() == 0 && !semantic_has_error()) {
         tac_generate(raiz);
+      codegen_python_generate(raiz);
         printf("Analise sintatica concluida com sucesso.\n");
         return 0;
     }

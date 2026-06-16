@@ -2,8 +2,6 @@
 #include <string.h>
 #include "symbol_table.h"
 
-#define MAX_SYMBOLS 100
-
 Simbolo tabela[MAX_SYMBOLS];
 int total_simbolos = 0;
 

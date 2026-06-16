@@ -1,5 +1,5 @@
 begin {
-    int a, b, x, d, c, e, f;
+    int  b, x, d, c, e, f;
     int m;
     m = (a + b) * (c - d) + (a + b) * (e - f);
 } end
