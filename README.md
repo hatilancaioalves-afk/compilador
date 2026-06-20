@@ -23,6 +23,6 @@ O compilador lê a entrada pela entrada padrão. Para testar com o arquivo de ex
 
 Quando a análise termina sem erros, o projeto gera o arquivo `programa.py`.
 
-## Observação
+## Observação 
 
 Se você alterar a gramática no arquivo `parser.y` ou o analisador léxico em `lexer.l`, será necessário regenerar `parser.tab.c`, `parser.tab.h` e `lex.yy.c` antes de recompilar.
