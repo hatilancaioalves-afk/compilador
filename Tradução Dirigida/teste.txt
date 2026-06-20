@@ -1,8 +1,0 @@
-
-string salario;
-
-idade = 20 + salario;
-
-if (idade >= 18 && idade != 0) {
-    print idade;
-}
