@@ -21,7 +21,7 @@ O compilador lê a entrada pela entrada padrão. Para testar com o arquivo de ex
 
 ## Saídas geradas
 
-Quando a análise termina sem erros, o projeto gera os arquivos `programa.py` e `programa.c` na mesma pasta.
+Quando a análise termina sem erros, o projeto gera o arquivo `programa.py`.
 
 ## Observação
 
